@@ -27,6 +27,11 @@ export const UpgradeCommand = {
     prompts.intro("Upgrade")
     const detectedMethod = await Installation.method()
     const method = (args.method as Installation.Method) ?? detectedMethod
+    if (method === "snap") {
+      prompts.log.warn("opencode is installed as a snap. Run `snap refresh opencode` to upgrade.")
+      prompts.outro("Done")
+      return
+    }
     if (method === "unknown") {
       prompts.log.error(`opencode is installed to ${process.execPath} and may be managed by a package manager`)
       const install = await prompts.select({

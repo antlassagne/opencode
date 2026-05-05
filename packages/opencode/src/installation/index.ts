@@ -15,7 +15,7 @@ import { NpmConfig } from "@opencode-ai/core/npm-config"
 
 const log = Log.create({ service: "installation" })
 
-export type Method = "curl" | "npm" | "yarn" | "pnpm" | "bun" | "brew" | "scoop" | "choco" | "unknown"
+export type Method = "curl" | "npm" | "yarn" | "pnpm" | "bun" | "brew" | "scoop" | "choco" | "snap" | "unknown"
 
 export type ReleaseType = "patch" | "minor" | "major"
 
@@ -171,6 +171,7 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
           }
         }),
         method: Effect.fn("Installation.method")(function* () {
+          if (process.env.SNAP) return "snap" as Method
           if (process.execPath.includes(path.join(".opencode", "bin"))) return "curl" as Method
           if (process.execPath.includes(path.join(".local", "bin"))) return "curl" as Method
           const exec = process.execPath.toLowerCase()
@@ -264,6 +265,8 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
         upgrade: Effect.fn("Installation.upgrade")(function* (m: Method, target: string) {
           let upgradeResult: { code: ChildProcessSpawner.ExitCode; stdout: string; stderr: string } | undefined
           switch (m) {
+            case "snap":
+              return yield* new UpgradeFailedError({ stderr: "Run `snap refresh opencode` to upgrade" })
             case "curl":
               upgradeResult = yield* upgradeCurl(target)
               break
